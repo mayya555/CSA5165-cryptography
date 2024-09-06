@@ -1,0 +1,30 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define NUM_SUBKEYS 16
+uint32_t left_circular_shift(uint32_t value, int shift) {
+    return ((value << shift) | (value >> (28 - shift))) & 0x0FFFFFFF;
+}
+void generate_subkeys(uint64_t initial_key, uint64_t subkeys[NUM_SUBKEYS]) {
+    uint32_t left_half = (initial_key >> 28) & 0x0FFFFFFF;  
+    uint32_t right_half = initial_key & 0x0FFFFFFF;        
+    int shift_schedule[NUM_SUBKEYS] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
+
+    for (int i = 0; i < NUM_SUBKEYS; i++) {
+        left_half = left_circular_shift(left_half, shift_schedule[i]);
+        right_half = left_circular_shift(right_half, shift_schedule[i]);
+        uint64_t subkey = ((uint64_t)(left_half >> 4) << 24) | (right_half >> 4);
+        subkeys[i] = subkey;
+    }
+}
+
+int main() {
+    uint64_t initial_key = 0xAABBCCDDEEFF;
+    uint64_t subkeys[NUM_SUBKEYS];
+    generate_subkeys(initial_key, subkeys);
+    for (int i = 0; i < NUM_SUBKEYS; i++) {
+        printf("Subkey %d: %012llx\n", i + 1, subkeys[i]);
+    }
+
+    return 0;
+}
